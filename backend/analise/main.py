@@ -1,51 +1,136 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import pandas as pd
-import os
+import numpy as np
 import glob
+import os
+import matplotlib.pyplot as plt
 
-app = FastAPI()
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn import metrics
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+print("\n--- PIPELINE COMPLETO DE QUEIMADAS ---")
+
+# ==============================
+# 1. CONSOLIDAÇÃO
+# ==============================
+arquivos = glob.glob(os.path.join("dados/brutos", "*.csv"))
+
+dfs = []
+for arq in arquivos:
+    try:
+        df_temp = pd.read_csv(arq)
+        dfs.append(df_temp)
+    except:
+        print(f"Erro ao ler {arq}")
+
+df = pd.concat(dfs, ignore_index=True)
+
+print(f"Dados carregados: {len(df)}")
+
+# ==============================
+# 2. LIMPEZA
+# ==============================
+df = df.drop_duplicates()
+
+df['DataHora'] = pd.to_datetime(df['DataHora'], errors='coerce')
+df = df.dropna(subset=['DataHora'])
+
+df['RiscoFogo'] = df['RiscoFogo'].replace(-999, np.nan)
+df['RiscoFogo'] = df['RiscoFogo'].fillna(0)
+
+# ==============================
+# 3. FILTRAR PORTO VELHO 🔥
+# ==============================
+df['Municipio'] = df['Municipio'].str.upper().str.strip()
+df = df[df['Municipio'] == "PORTO VELHO"]
+
+# ==============================
+# 4. AGREGAÇÃO
+# ==============================
+df['Data'] = df['DataHora'].dt.date
+
+df_modelo = df.groupby('Data').agg(
+    qtd_focos=('Data', 'count'),
+    media_dias_sem_chuva=('DiaSemChuva', 'mean'),
+    media_precipitacao=('Precipitacao', 'mean'),
+    media_risco_fogo=('RiscoFogo', 'mean'),
+    media_frp=('FRP', 'mean')
+).reset_index()
+
+# ==============================
+# 5. FEATURES
+# ==============================
+df_modelo['Data'] = pd.to_datetime(df_modelo['Data'])
+
+df_modelo['Mes'] = df_modelo['Data'].dt.month
+df_modelo['Estacao_Seca'] = df_modelo['Mes'].apply(
+    lambda x: 1 if x in [7,8,9,10] else 0
 )
 
-@app.get("/queimadas/ano/{ano}") # 
-def focos_por_ano(ano: int):
-    try:
-        # Encontra todos os arquivos CSV na pasta 'data/'
-        arquivos_csv = glob.glob(os.path.join("data", "*.csv"))
+df_modelo['lag_1'] = df_modelo['qtd_focos'].shift(1)
+df_modelo['lag_2'] = df_modelo['qtd_focos'].shift(2)
 
-        if not arquivos_csv:
-            return JSONResponse(content={"erro": "Nenhum arquivo CSV encontrado"}, status_code=404)
+df_modelo = df_modelo.dropna()
 
-        # Lista para armazenar os DataFrames
-        dataframes = []
+# ==============================
+# 6. MODELO
+# ==============================
+features = [
+    'media_dias_sem_chuva',
+    'media_precipitacao',
+    'media_risco_fogo',
+    'media_frp',
+    'Estacao_Seca',
+    'lag_1',
+    'lag_2'
+]
 
-        for arquivo in arquivos_csv:
-            df = pd.read_csv(arquivo, encoding="latin1", sep=",")
-            if "DataHora" in df.columns:
-                df["DataHora"] = pd.to_datetime(df["DataHora"], errors="coerce")
-                df = df[df["DataHora"].dt.year == ano]
-                dataframes.append(df)
+X = df_modelo[features]
+y = df_modelo['qtd_focos']
 
-        # Se nenhum dado do ano foi encontrado
-        if not dataframes:
-            return JSONResponse(content={"erro": f"Nenhum dado encontrado para o ano {ano}"}, status_code=404)
+split = int(len(df_modelo) * 0.8)
 
-        # Concatena todos os DataFrames
-        df_total = pd.concat(dataframes, ignore_index=True)
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
 
-        # Agrupa os dados por data e conta os focos
-        df_total["data"] = df_total["DataHora"].dt.date
-        grupo = df_total.groupby("data").size().reset_index(name="qtd_focos")
+param_grid = {
+    'n_estimators': [100],
+    'max_depth': [20],
+    'min_samples_split': [5]
+}
 
-        return grupo.to_dict(orient="records")
+grid = GridSearchCV(RandomForestRegressor(random_state=42),
+                    param_grid, cv=3)
 
-    except Exception as e:
-        return JSONResponse(content={"erro": str(e)}, status_code=500)
+grid.fit(X_train, y_train)
+
+modelo = grid.best_estimator_
+
+# ==============================
+# 7. AVALIAÇÃO
+# ==============================
+previsoes = modelo.predict(X_test)
+
+print("\n--- RESULTADOS ---")
+print("MAE:", metrics.mean_absolute_error(y_test, previsoes))
+print("R2:", metrics.r2_score(y_test, previsoes))
+
+# ==============================
+# 8. GRÁFICOS
+# ==============================
+os.makedirs("resultados/graficos", exist_ok=True)
+
+# Real vs Previsto
+plt.plot(y_test.values, label="Real")
+plt.plot(previsoes, label="Previsto")
+plt.legend()
+plt.savefig("resultados/graficos/real_vs_previsto.png")
+plt.clf()
+
+# Erro
+erro = y_test - previsoes
+plt.hist(erro)
+plt.savefig("resultados/graficos/erro.png")
+plt.clf()
+
+print("\n✔ Pipeline final executado com sucesso!")
