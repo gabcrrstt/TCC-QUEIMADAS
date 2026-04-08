@@ -128,13 +128,22 @@ Modelos testados:
 ## 📁 Estrutura do Projeto
 
 ```
-📂 tcc/
- ├── data/                # Dados brutos e tratados
- ├── notebooks/          # Análises exploratórias
- ├── models/             # Modelos treinados
- ├── imagens/            # Gráficos e visualizações
- ├── src/                # Scripts principais
- └── README.md
+📁 Project Structure
+TCC-QUEIMADAS/
+│
+├── tcc/
+│   ├── analise/
+│   │   ├── consolidacao/
+│   │   ├── features/
+│   │   ├── graficos/
+│   │   ├── modelos/
+│   │   └── main.py
+│   │
+│   ├── data/
+│   └── imagens/
+│
+├── dados_consolidados_2015_2025.csv
+├── README.md
 ```
 
 ---
