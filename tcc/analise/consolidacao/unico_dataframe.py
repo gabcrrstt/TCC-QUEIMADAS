@@ -15,7 +15,7 @@ if not arquivos:
     print("❌ Nenhum arquivo CSV encontrado!")
     exit()
 
-print(f"📂 {len(arquivos)} arquivos encontrados. Carregando...")
+print(f" {len(arquivos)} arquivos encontrados.")
 
 # ==============================
 # 2. CARREGAMENTO COM SEGURANÇA
@@ -29,13 +29,13 @@ for arquivo in arquivos:
 
         # Verificar colunas essenciais
         if "DataHora" not in df.columns:
-            print(f"⚠️ Arquivo ignorado (sem DataHora): {arquivo}")
+            print(f" Arquivo ignorado (sem DataHora): {arquivo}")
             continue
 
         lista_dfs.append(df)
 
     except Exception as e:
-        print(f"⚠️ Erro ao ler {arquivo}: {e}")
+        print(f"Erro ao ler {arquivo}: {e}")
 
 if not lista_dfs:
     print("❌ Nenhum arquivo válido carregado.")
@@ -43,7 +43,7 @@ if not lista_dfs:
 
 df = pd.concat(lista_dfs, ignore_index=True)
 
-print(f"✅ Total de registros: {len(df)}")
+print(f" Total de registros: {len(df)}")
 
 # ==============================
 # 3. PRÉ-PROCESSAMENTO
@@ -75,7 +75,7 @@ if 'RiscoFogo' in df.columns:
 print("✅ Pré-processamento concluído.")
 
 # ==============================
-# 4. ANÁLISE RÁPIDA (BÔNUS 🔥)
+# 4. ANÁLISE RÁPIDA 
 # ==============================
 
 print("\n📊 Estatísticas básicas:")
