@@ -39,7 +39,6 @@ alvo = 'qtd_focos'
 X = df_modelo[features]
 y = df_modelo[alvo]
 
-# ***** A CORREÇÃO ESTÁ AQUI *****
 # Preenchemos QUALQUER NaN restante com 0. Isso garante compatibilidade com todos os modelos.
 X.fillna(0, inplace=True)
 print("Dados preparados e limpos, sem valores NaN.")
