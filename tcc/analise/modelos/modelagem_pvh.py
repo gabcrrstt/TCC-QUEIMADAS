@@ -62,5 +62,5 @@ df_modelo = df_modelo.dropna()
 
 df_modelo.to_csv('backend\data\modelagem\dados_modelagem_pvh.csv', index=False)
 
-print("\n✅ DATASET DE MODELAGEM PRONTO!")
+print("\n DATASET DE MODELAGEM PRONTO!")
 print(df_modelo.head())
