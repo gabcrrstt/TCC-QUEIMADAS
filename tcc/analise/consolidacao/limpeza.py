@@ -70,7 +70,7 @@ df['Mes'] = df['DataHora'].dt.month
 df['Dia'] = df['DataHora'].dt.day
 df['DiaSemana'] = df['DataHora'].dt.dayofweek
 
-# Estação seca (muito importante pro seu TCC)
+# Estação seca 
 df['Estacao_Seca'] = df['Mes'].apply(lambda x: 1 if x in [7,8,9,10] else 0)
 
 print("✔ Variáveis temporais criadas")
@@ -79,8 +79,8 @@ print("✔ Variáveis temporais criadas")
 # 7. RESUMO FINAL
 # ==============================
 
-print("\n📊 RESUMO DOS DADOS LIMPOS:")
+print("\n RESUMO DOS DADOS LIMPOS:")
 print(df.info())
 print(df.describe())
 
-print("\n✅ LIMPEZA FINALIZADA COM SUCESSO!")
+print("\n LIMPEZA FINALIZADA COM SUCESSO!")
