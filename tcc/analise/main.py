@@ -39,7 +39,7 @@ df['RiscoFogo'] = df['RiscoFogo'].replace(-999, np.nan)
 df['RiscoFogo'] = df['RiscoFogo'].fillna(0)
 
 # ==============================
-# 3. FILTRAR PORTO VELHO 🔥
+# 3. FILTRAR PORTO VELHO 
 # ==============================
 df['Municipio'] = df['Municipio'].str.upper().str.strip()
 df = df[df['Municipio'] == "PORTO VELHO"]
