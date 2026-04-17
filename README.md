@@ -90,7 +90,6 @@ Modelos testados:
 * Forte **sazonalidade** (ago–out)
 * Alta **dependência temporal** (lag_1)
 * Influência significativa de variáveis climáticas
-* Porto Velho concentra maior número de focos
 
 ---
 
